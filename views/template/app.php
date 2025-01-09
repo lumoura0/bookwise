@@ -1,5 +1,4 @@
 <?php
-require 'dados.php'
 ?>
 
 <!DOCTYPE html>
