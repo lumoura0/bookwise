@@ -1,75 +1,79 @@
 <?php
 
-
-/*
-
- $validacao = Validacao::valida([
-        'nome' => 'required',
-        'email' => ['required', 'email', 'confirmed'],
-        'senha' => ['required', 'min:8', 'max:30', 'strong']
-    ], $_POST);
-
-    if ($validacao->naoPassou()) {
-        $_SESSION['validacao'] = $validacao->validacoes;
-        header('location: /login');
-        exit();
-    }
-
-$validacoes = [];
-    // Validações do formulário
-    $nome = $_POST['nome'];
-    $email = $_POST['email'];
-    $email_confirmacao = $_POST['email_confirmacao'];
-    $senha = $_POST['senha'];
-
-    if (strlen($nome) == 0) {
-        $validacoes[] = 'O nome é origatório.';
-    }
-
-    if (strlen($email) == 0) {
-        $validacoes[] = 'O email é origatório.';
-    }
-
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $validacoes[] = 'O email é inválido.';
-    }
-
-    if ($email != $email_confirmacao) {
-        $validacoes[] = 'O email de confirmação está diferente.';
-    }
-
-    if (strlen($senha) == 0) {
-        $validacoes[] = 'A senha é obrigatória.';
-    }
-
-    if (strlen($senha) < 8 || strlen($senha) > 30) {
-        $validacoes[] = 'A senha precisa ter entre 8 e 30 caracteres.';
-    }
-
-    if (!str_contains($senha, '*')) {
-        $validacoes[] = 'A senha precisa ter um * nela.';
-    }
-*/
-
 class Validacao
 {
-    public $validacoes;
+    public $validacoes = [];
 
     public static function validar($regras, $dados)
     {
         $validacao = new self;
 
-        foreach ($regrasDoCampo as $regra) {
-            $validacao->$regra($campo);
+        foreach ($regras as $campo => $regrasDoCampo) {
+            foreach ($regrasDoCampo as $regra) {
+                $valorDoCampo = $dados[$campo];
+
+                if ($regra == 'confirmed') {
+                    $validacao->$regra($campo, $valorDoCampo, $dados["{$campo}_confirmacao"]);
+                } elseif (str_contains($regra, ':')) {
+                    $temp = explode(':', $regra);
+                    $regra = $temp[0];
+                    $regraAr = $temp[1];
+                    $validacao->$regra($regraAr, $campo, $valorDoCampo);
+                } else {
+                    $validacao->$regra($campo, $valorDoCampo);
+                }
+            }
         }
 
         return $validacao;
     }
 
-    private function required($campo)
+    private function required($campo, $valor)
     {
-        if (strlen($campo) == 0) {
+        if (strlen($valor) == 0) {
             $this->validacoes[] = "O $campo é origatório.";
         }
+    }
+
+
+    private function email($campo, $valor)
+    {
+        if (!filter_var($valor, FILTER_VALIDATE_EMAIL)) {
+            $this->validacoes[] = "O $campo é inválido.";
+        }
+    }
+
+    private function confirmed($campo, $valor, $valorDeConfirmacao)
+    {
+        if ($valor != $valorDeConfirmacao) {
+            $this->validacoes[] = "O $campo de confirmação está diferente.";
+        }
+    }
+
+    private function min($min, $campo, $valor)
+    {
+        if (strlen($valor) <= $min) {
+            $this->validacoes[] = "O $campo precisa ter pelo menos $min caracteres.";
+        }
+    }
+
+    private function max($max, $campo, $valor)
+    {
+        if (strlen($valor) > $max) {
+            $this->validacoes[] = "O $campo precisa ter pelo menos $max caracteres.";
+        }
+    }
+
+    private function strong($campo, $valor)
+    {
+        if (!strpbrk($valor, '*')) {
+            $this->validacoes[] = "O $campo precisa ter um * nela.";
+        }
+    }
+
+    public function naoPassou()
+    {
+        $_SESSION['validacoes'] = $this->validacoes;
+        return sizeof($this->validacoes) > 0;
     }
 }
