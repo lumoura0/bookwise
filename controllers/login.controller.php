@@ -17,9 +17,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         params: compact('email', 'senha')
     )->fetch();
 
-    dd($usuario);
 
-    //3. Se exister nós vamos adicionar na sessão que o usuário está autenticado
+    if ($usuario) {
+        //3. Se exister nós vamos adicionar na sessão que o usuário está autenticado
+        $_SESSION['auth'] = $usuario;
+        $_SESSION['mensagem'] = 'Seja bem vindo ' . $usuario['nome'] . '!';
+        header('Location: /');
+        exit();
+    }
+
     //4. Mudar a informação no nosso navbar para mostrar o nome do usuário
 }
 
